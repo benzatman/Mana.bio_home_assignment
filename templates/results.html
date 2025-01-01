@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stored Results</title>
+</head>
+<body>
+    <h1>Experiment Types</h1>
+    <ul>
+        {% for experiment in experiment_types %}
+            <li><a href="/results/{{ experiment }}">{{ experiment }}</a></li>
+        {% endfor %}
+    </ul>
+    <a href="/">Go Back</a>
+</body>
+</html>

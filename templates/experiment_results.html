@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Experiment Results</title>
+</head>
+<body>
+    <h1>Results for {{ experiment_type }}</h1>
+    <p>Statistics:</p>
+    <ul>
+        <li>Median: {{ stats.median }}</li>
+        <li>Average: {{ stats.average }}</li>
+        <li>Standard Deviation: {{ stats.std_dev }}</li>
+    </ul>
+    <table border="1">
+        <tr>
+            <th>Formulation ID</th>
+            <th>Calculated Value</th>
+        </tr>
+        {% for row in rows %}
+            <tr>
+                <td>{{ row[0] }}</td>
+                <td>{{ row[1] }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+    <a href="/results">Go Back</a>
+</body>
+</html>
