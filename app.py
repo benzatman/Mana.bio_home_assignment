@@ -107,15 +107,12 @@ def process_tns(data):
 def process_zeta_potential(data):
     results = []
     control_values = data.iloc[:3, 1:4].mean().mean()  # Ensure control values are calculated correctly
-    print("Control Values (float):", float(control_values),flush=True)  # Debugging line
 
     for row in range(3, data.shape[0]):
         formulation_id = data.iloc[row, 0]
         triplicate_values = data.iloc[row, 1:4]
         avg_formulation = triplicate_values.mean()
         calculated_value = avg_formulation / control_values
-
-        print(f"Formulation ID: {formulation_id}, Calculated Value: {calculated_value}",flush=True)  # Debugging line
 
         results.append({
             'formulation_id': str(formulation_id),  
