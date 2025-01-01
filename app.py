@@ -3,10 +3,7 @@ import pandas as pd
 import sqlite3
 import os
 from statistics import mean, median, stdev
-import logging
-
-
-logging.basicConfig(level=logging.DEBUG)
+import traceback
 
 app = Flask(__name__)
 DATABASE = 'results.db'
@@ -46,7 +43,12 @@ def upload():
         store_results(experiment_type, results)
         return jsonify({'message': 'File processed and results stored successfully, go to main page to view results'}), 200
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        tb = traceback.format_exc()
+        return jsonify({
+            'error': str(e),
+            'traceback': tb
+        }), 500
+    
 
 @app.route('/results')
 def results():
@@ -81,7 +83,7 @@ def process_file(filepath):
     else:
         raise ValueError('Unsupported file format')
 
-    if 'STD' in data.columns[0]:  # Zeta Potential file logic
+    if 'Measurement Type' in data.columns:  # Zeta Potential file logic
         return 'Zeta Potential', process_zeta_potential(data)
     else:  # TNS logic assumed
         return 'TNS', process_tns(data)
@@ -106,21 +108,43 @@ def process_tns(data):
 
 def process_zeta_potential(data):
     results = []
-    control_values = data.iloc[:3, 1:4].mean().mean()  # Ensure control values are calculated correctly
 
-    for row in range(3, data.shape[0]):
-        formulation_id = data.iloc[row, 0]
-        triplicate_values = data.iloc[row, 1:4]
-        avg_formulation = triplicate_values.mean()
-        calculated_value = avg_formulation / control_values
+    # Remove rows with NaN in the 'Sample Name' column
+    data = data.dropna(subset=['Sample Name'])
+
+    # Ensure 'Zeta Potential (mV)' is numeric
+    data['Zeta Potential (mV)'] = pd.to_numeric(data['Zeta Potential (mV)'], errors='coerce')
+
+    # Filter controls and calculate the mean of the control zeta potential
+    control_values = data[data['Sample Name'].str.startswith('STD')]['Zeta Potential (mV)']
+    avg_control = control_values.mean()
+
+    # Handle invalid control values
+    if pd.isnull(avg_control) or avg_control == 0:
+        raise ValueError("Invalid control values: Cannot calculate mean. Ensure controls are numeric and non-zero.")
+
+    # Process formulations
+    formulations = data[~data['Sample Name'].str.startswith('STD')]
+    for _, row in formulations.iterrows():
+        formulation_id = row['Sample Name']
+        zeta_value = row['Zeta Potential (mV)']
+
+        # Ensure zeta_value is numeric
+        if pd.isnull(zeta_value):
+            print(f"Skipping {formulation_id}: Non-numeric zeta value found")
+            continue
+
+        # Normalize by control average
+        calculated_value = zeta_value / avg_control
 
         results.append({
-            'formulation_id': str(formulation_id),  
-            'calculated_value': float(calculated_value),  
-            'valid': float(calculated_value) > 0  # Ensure valid is properly calculated
+            'formulation_id': formulation_id,
+            'calculated_value': calculated_value,
+            'valid': calculated_value > 0  # Results must be positive
         })
 
     return results
+
 
 
 def store_results(experiment_type, results):
