@@ -109,10 +109,7 @@ def process_tns(data):
 def process_zeta_potential(data):
     results = []
 
-    # Remove rows with NaN in the 'Sample Name' column
     data = data.dropna(subset=['Sample Name'])
-
-    # Ensure 'Zeta Potential (mV)' is numeric
     data['Zeta Potential (mV)'] = pd.to_numeric(data['Zeta Potential (mV)'], errors='coerce')
 
     # Filter controls and calculate the mean of the control zeta potential
@@ -134,7 +131,7 @@ def process_zeta_potential(data):
             print(f"Skipping {formulation_id}: Non-numeric zeta value found")
             continue
 
-        # Normalize by control average
+
         calculated_value = zeta_value / avg_control
 
         results.append({
